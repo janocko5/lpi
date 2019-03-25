@@ -26,5 +26,6 @@ Ak si toto pozeráte vo svojom repozitári, funguje aj tento
 |    3   | [výrokové vyplývanie a ekvivalencia](teoreticke/tu03.pdf) | [Sudoku](prakticke/pu03) |
 |    4   | [CNF a hilbertovské dôkazy](teoreticke/tu04.pdf) | [toCnf](prakticke/pu04) |
 |    5   | [tablá pre vyplývanie a tautológie](teoreticke/tu05.pdf) | [Tableau](prakticke/pu05) |
+|    6   | [splniteľnosť a falzifikovateľnosť v tablách](teoreticke/tu06.pdf) | |
 
 [Pravidlá pre úlohy](http://dai.fmph.uniba.sk/w/Course:Mathematics_4/sk#pravidla-uloh).
