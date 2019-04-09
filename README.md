@@ -28,5 +28,6 @@ Ak si toto pozeráte vo svojom repozitári, funguje aj tento
 |    5   | [tablá pre vyplývanie a tautológie](teoreticke/tu05.pdf) | [Tableau](prakticke/pu05) |
 |    6   | [splniteľnosť a falzifikovateľnosť v tablách](teoreticke/tu06.pdf) | [TableauBuilder](prakticke/pu06) |
 |    7   | [rezolvencia a korektné pravidlá](teoreticke/tu07.pdf) | [Resolver](prakticke/pu07) |
+|    8   | [prvorádová formalizácia](teoreticke/tu08.pdf) | |
 
 [Pravidlá pre úlohy](http://dai.fmph.uniba.sk/w/Course:Mathematics_4/sk#pravidla-uloh).
