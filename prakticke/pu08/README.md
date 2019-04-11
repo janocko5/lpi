@@ -16,13 +16,13 @@ vstupná formula (v konjunktívnej normálnej forme) splniteľná.
 
 Na prednáške ste videli základnú kostru metódy DPLL, ktorej hlavnou ideou je
 propagácia klauzúl s iba jednou premennou (_jednotková klauzula_,
-<i lang="en">unit clause</i>). Tá ale hovorí o veciach ako *vymazávanie
-literálov* z klauzúl a *vymazávanie klauzúl*, čo sú veci, ktoré nie je také
+<i lang="en">unit clause</i>). Tá ale hovorí o veciach ako _vymazávanie
+literálov_ z klauzúl a _vymazávanie klauzúl_, čo sú veci, ktoré nie je také
 ľahké efektívne (či už časovo alebo pamäťovo) implementovať, hlavne ak počas
 <i lang="en">backtrack</i>ovania treba zmazané literály resp. klauzuly správne
 naspäť obnovovať.
 
-Na tomto cvičení si preto naprogramujeme techniku *sledovaných literálov*,
+Na tomto cvičení si preto naprogramujeme techniku _sledovaných literálov_,
 ktorá výrazne zjednodušuje „menežment“ literálov, klauzúl a dátových štruktúr.
 Na budúcom cvičení ju použijeme pri implementácii samotnej metódy DPLL.
 
@@ -59,26 +59,44 @@ Bonus navyše: ak <i lang="en">backtrack</i>ujeme (meníme nejaký `true` alebo 
 na nenastavený), tak nemusíme vôbec nič robiť (so sledovanými literálmi v klauzulách;
 samotný literál / premennú samozrejme musíme korektne „odnastaviť“).
 
-### Implementácia sledovania
+## Implementácia
 
-Sledovanie literálov doimplementujeme do tried na reprezentáciu formúl v CNF
-z minulých cvičení.
+Sledovanie literálov a jeho zmeny pri zmenách čiastočného ohodnotenia
+premenných doimplementujeme do tried na reprezentáciu formúl v CNF z minulých
+cvičení a do novej triedy `Theory`, ktorá predstavuje stav behu algoritmu DPLL,
+hlavne formulu v `Cnf` (metóda `cnf()`), s ktorou algoritmus pracuje.
+Tieto triedy spolu tvoria knižnicu [Theory.java](java/Theory.java).
 
-Trieda `Literal` dostala metódy `setTrue` a `unset`, ktorými literál nastavíme
-na pravdivý, resp. jeho nastavenie zrušíme. Metódy `isSet()` a `isTrue()` 
-zase zisťujú, či literál má nastavenú pravdivostnú hodnotu, resp. či je
-pravdivý. `Literal` má aj novú metódu `watchedIn()`, ktorá vráti množinu
-sledujúcich klauzúl (teda takých, v ktorých je literál sledovaný).
+### Premenné a literály
+
+Každú premennú _jednoznačne_ reprezentuje objekt triedy `Variable`.
+Čiastočné ohodnotenie premenných, s ktorým algoritmus DPLL pracuje, nie je
+reprezentované samostatným objektom. Každá premenná si priamo pamätá,
+či má priradenú pravdivostnú hodnotu (teda či je „nastavená“) a akú.
+
+Premenná odkazuje na dva `Literal`y, pozitívny a negatívny, ktoré k nej
+prislúchajú. Tieto literály sú potom prvkami klauzúl (`Clause`) a tie zase
+prvkami `Cnf`.
+
+Algoritmus DPLL pracuje s literálmi a klauzulami. Aby sme ľahko zistili
+pravdivostnú hodnotu literálu a či je vôbec nastavená, má `Literal` metódy
+`isSet()`, `isTrue()` a `isFalse()`, ktoré vrátia správnu hodnotu podľa toho,
+či a ako je ohodnotená príslušná premenná a aké je znamienko literálu.
+Prostredníctvom metód `Literal`u `setTrue()` a `unset()` môžeme ohodnotenie aj
+meniť. K opačnému literálu sa dostaneme metódou `not()`.
+
+### Sledované literály
 
 Samotné sledovanie literálov v klauzulách implementujte v triede `Clause`
-v metódach `setWatch` a `findNewWatch`. Táto trieda má nový atribút `watched`
-(a jeho accessor `watched()`), dvojprvkové pole sledovaných literálov.
+v metódach `setWatch` a `findNewWatch`. Metóda `watched()` vráti dvojprvkové
+pole sledovaných literálov klauzuly. Naopak `Literal` má metódu `watchedIn()`,
+ktorá vráti množinu klauzúl, v ktorých je sledovaný.
 
-Metóda `void setWatch(int index, Literal lit)` nastaví `index`-tý prvok poľa
-`watched` na literál `lit`, ktorý sa v klauzule musí vyskytovať.
-Okrem toho literálu `lit` pridá túto klauzulu do jeho množiny sledujúcich
-klauzúl (`lit.watchedIn()`). Ak navyše klauzula predtým nejaký literál s týmto
-`index`-om sledovala, odoberie ju z jeho množiny sledujúcich klauzúl.
+Metóda `void setWatch(int index, Literal lit)` v triede `Clause` nastaví
+`index`-tý prvok poľa `watched()` na literál `lit`, ktorý sa v klauzule musí
+vyskytovať. Okrem toho literálu `lit` pridá túto klauzulu do množiny klauzúl,
+v ktorých je sledovaný. Ak navyše klauzula predtým nejaký literál s týmto
+`index`-om sledovala, metóda ju z jeho množiny sledujúcich klauzúl.
 
 Metóda `boolean findNewWatch(Literal old)` nahradí doteraz sledovaný literál
 `old`, ak je to potrebné, teda ak je literál `old` nastavený a nepravdivý.
@@ -88,26 +106,50 @@ nahradí literál `old` a vráti `true`. Ak sa jej to podarí, alebo literál `
 netreba nahrádzať, metóda `findNewWatch` vráti `true`. Inak (všetky literály
 sú nepravdivé alebo už sledované) vráti `false`.
 
-### Implementácia nastavovania literálov
+### Inicializácia
 
-Na nastavovanie a „odnastavovanie“ literálov počas behu algoritmu DPLL
+Pri inicializácii algoritmu musíme zabezpečiť, aby v každej klauzule boli
+sledované (podľa možnosti) dva jej literály. To je úlohou metódy
+`boolean initWatched(Set<UnitClause> units)` v triede `Theory`. Pre klauzuly
+s dvoma a viacerými literálmi vyberie na sledovanie ľubovoľné dva z nich.
+Jednotkovým klauzulám priradí ich jediný literál ako nultý aj prvý sledovaný
+a zároveň ich vloží do množiny `units` (použijeme ju potom na propagáciu
+jednotkových klauzúl). Ak sa pri inicializácii nájde prázdna klauzula (vstupná
+teória je evidentne nesplniteľná), metóda `initWatched` to signalizuje vrátením
+`false`. Inak vráti `true`.
+
+Množina `units` neobsahuje jednotkové klauzuly priamo, ale „obalené“ do objektu
+triedy `UnitClause`, ktorý okrem klauzuly obsahuje aj referenciu na jej jediný
+literál. Túto triedu použijeme aj počas behu algoritmu na obalenie klauzúl,
+ktoré sú „v podstate jednotkové“ – majú viac literálov, ale iba jeden z nich je
+nenastavený.
+
+### Vplyv nastavovania literálov na sledovanie
+
+Na zabezpečenie potrebných zmien v sledovaní literálov pri zmenách ohodnotenia,
+teda pri nastavení pravdivostnej hodnoty literálu a jej „odnastavení“
 implementujeme v triede `Theory` metódy `setLiteral` a `unsetLiteral`.
 
 Metóda `boolean setLiteral(Literal l, Set<UnitClause> units)` nastaví
-literál `l` na pravdivý a vo všetkých klauzulách, v ktoré sledujú jeho
-opačný literál `l.not()`, sa pokúsi nájsť nový literál na sledovanie (pomocou
-metódy `findNewWatch`). Všetky klauzuly, o ktorých pritom zistí, že už majú iba
-jeden nenastavený literál, pridá do množiny jednotkových klauzúl `units`. Ak sa
-pri hľadaní sledovaných literálov zistí, že niektorá klauzula už má všetky
-literály nastavené na nepravdivé, metóda `setLiteral` vráti `false`. Inak vráti
-`true`.
+literál `l` na pravdivý a vo všetkých klauzulách, ktoré sledujú jeho opačný
+literál `l.not()`, sa pokúsi nájsť nový literál na sledovanie. Všetky klauzuly,
+o ktorých zistí, že už majú iba jeden nenastavený literál, pridá do množiny
+jednotkových klauzúl `units` (obalené spolu s týmto literálom do objektu vyššie
+spomenutej triedy `UnitClause`). Ak má niektorá klauzula už všetky literály
+nastavené na nepravdivé, metóda `setLiteral` vráti `false`. Inak vráti `true`.
 
-Metóda `public void unsetLiteral()` „odnastaví“ naposledy nastavený literál.
+Nezabudnite, že klauzula má na hľadanie nových sledovaných literálov metódu.
+Podľa jej návratovej hodnoty a sledovaných literálov ľahko rozhodnete, či
+v klauzule ostal jediný nenastavený literál aj či sú všetky nepravdivé.
+
+Metóda `void unsetLiteral()` „odnastaví“ naposledy nastavený literál.
+To, samozrejme, vyžaduje, aby si `Theory` pamätala poradie, v ktorom sa
+literály nastavujú.
 
 ## Technické detaily riešenia
 
 Riešenie odovzdajte do vetvy `pu08` v adresári `prakticke/pu08`.
-Odovzdávajte knižnicu [`Cnf.java`](java/Cnf.java).
+Odovzdávajte knižnicu [`Theory.java`](java/Theory.java).
 Program [`WatchedLiteralsTest.java`](java/WatchedLiteralsTest.java)
 musí korektne zbehnúť s vašou knižnicou.
 
