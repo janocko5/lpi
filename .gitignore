@@ -176,6 +176,11 @@ Session.vim
 ##### Idea / CLion
 .idea
 
+##### VS Code
+.vscode
+.project
+.classpath
+
 ##### "default" cmake/gradle build dirs
 build
 cmake-build-debug
