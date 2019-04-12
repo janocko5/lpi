@@ -76,7 +76,7 @@ class Variable {
 
     @Override
     public String toString() {
-        return "Variable<" + name() +":" + (isSet() ? val.toString() : "unset") + ">";
+        return "Var<" + name() +":" + (isSet() ? val.toString() : "unset") + ">";
     }
 
     public static Variable fromString(String name, Map<String,Variable> vars) {
