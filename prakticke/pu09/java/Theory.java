@@ -340,6 +340,7 @@ class Theory {
 
     public Cnf cnf() { return cnf; }
     public Map<String, Variable> vars() { return vars; }
+    public int nAssigned() { return assignedLits.size(); }
 
     /**
      * Initialize the watched literals in each clause,
